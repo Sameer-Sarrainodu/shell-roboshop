@@ -2,23 +2,27 @@
 
 ZONE_ID="Z0022572U6LHZ3ASAGBB"
 
-# Safely get instance ID and its service tag
+# Get instances and their tags (only if service tag exists)
 instances=$(aws ec2 describe-instances \
   --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values=*latest" \
-  --query "Reservations[].Instances[].[InstanceId, Tags[?Key=='service'] | [0].Value]" \
-  --output text)
+  --query "Reservations[].Instances[].[InstanceId, Tags]" \
+  --output json)
 
-# Process each instance
-while read -r INSTANCE_ID SERVICE_TAG; do
-  # Skip if SERVICE_TAG is empty
-  if [[ -z "$SERVICE_TAG" || "$SERVICE_TAG" == "None" ]]; then
+# Loop through JSON manually using jq
+echo "$instances" | jq -c '.[]' | while read -r instance; do
+  INSTANCE_ID=$(echo "$instance" | jq -r '.[0]')
+  TAGS=$(echo "$instance" | jq -r '.[1]')
+
+  SERVICE_TAG=$(echo "$TAGS" | jq -r '.[] | select(.Key=="service") | .Value' 2>/dev/null)
+
+  if [[ -z "$SERVICE_TAG" || "$SERVICE_TAG" == "null" ]]; then
     echo "⚠️  Skipping instance $INSTANCE_ID due to missing service tag"
     continue
   fi
 
   echo "🔄 Processing $SERVICE_TAG ($INSTANCE_ID)"
 
-  # Get IPs
+  # Get public and private IP
   PUBLIC_IP=$(aws ec2 describe-instances \
     --instance-ids "$INSTANCE_ID" \
     --query "Reservations[0].Instances[0].PublicIpAddress" \
@@ -29,7 +33,7 @@ while read -r INSTANCE_ID SERVICE_TAG; do
     --query "Reservations[0].Instances[0].PrivateIpAddress" \
     --output text)
 
-  # Decide IP
+  # Choose IP based on service
   if [[ "$SERVICE_TAG" == "frontend" ]]; then
     SELECTED_IP="$PUBLIC_IP"
     DNS_NAME="sharkdev.shop"
@@ -38,13 +42,12 @@ while read -r INSTANCE_ID SERVICE_TAG; do
     DNS_NAME="${SERVICE_TAG}.sharkdev.shop"
   fi
 
-  # Check IP validity
   if [[ -z "$SELECTED_IP" || "$SELECTED_IP" == "None" ]]; then
     echo "⚠️  Skipping $SERVICE_TAG due to missing IP"
     continue
   fi
 
-  # Create or update DNS record
+  # Update DNS
   aws route53 change-resource-record-sets \
     --hosted-zone-id "$ZONE_ID" \
     --change-batch "{
@@ -60,7 +63,6 @@ while read -r INSTANCE_ID SERVICE_TAG; do
     }"
 
   echo "✅ DNS record set for $DNS_NAME → $SELECTED_IP"
-
-done <<< "$instances"
+done
 
 echo "✅ All DNS records updated successfully."
