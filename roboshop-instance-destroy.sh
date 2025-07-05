@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to terminate EC2 instances with specific service tags
+# Script to terminate all EC2 instances with specific service tags in a single batch
 
 # Configuration
 instances=("frontend" "mongodb" "catalogue" "redis" "user" "cart" "mysql" "shipping" "rabbitmq" "payment" "dispatch")
@@ -13,13 +13,11 @@ else
     exit 1
 fi
 
-# Counter for successful terminations
-SUCCESS_COUNT=0
+# Collect all instance IDs for the specified service tags
+echo "🔍 Searching for instances with service tags..."
+ALL_INSTANCE_IDS=()
 
-# Loop through each service to find and terminate instances
 for instance in "${instances[@]}"; do
-    echo "🔍 Searching for $instance instance..."
-
     # Fetch instance IDs with the specific service tag
     INSTANCE_IDS=$(aws ec2 describe-instances \
         --filters "Name=instance-state-name,Values=running" "Name=tag:service,Values=$instance" \
@@ -32,32 +30,61 @@ for instance in "${instances[@]}"; do
         continue
     fi
 
-    # Check if any instances were found
-    if [[ -z "$INSTANCE_IDS" ]]; then
+    # Add found instance IDs to the array
+    if [[ -n "$INSTANCE_IDS" ]]; then
+        for ID in $INSTANCE_IDS; do
+            ALL_INSTANCE_IDS+=("$ID|$instance")
+        done
+        echo "✅ Found instances for $instance: $INSTANCE_IDS"
+    else
         echo "⚠️ No running instances found for $instance"
-        continue
     fi
+done
 
-    # Terminate each instance
-    for INSTANCE_ID in $INSTANCE_IDS; do
-        echo "🗑️ Terminating $instance instance ($INSTANCE_ID)..."
-        TERMINATE_RESULT=$(aws ec2 terminate-instances \
+# Check if any instances were found
+if [[ ${#ALL_INSTANCE_IDS[@]} -eq 0 ]]; then
+    echo "⚠️ No running instances found for any specified service tags"
+    exit 1
+fi
+
+# Extract just the instance IDs for termination
+TERMINATE_IDS=()
+for ENTRY in "${ALL_INSTANCE_IDS[@]}"; do
+    TERMINATE_IDS+=("${ENTRY%%|*}")
+done
+
+# Terminate all instances in a single batch
+echo "🗑️ Terminating ${#TERMINATE_IDS[@]} instances: ${TERMINATE_IDS[*]}..."
+TERMINATE_RESULT=$(aws ec2 terminate-instances \
+    --instance-ids "${TERMINATE_IDS[@]}" \
+    --output text 2>&1)
+
+if [[ $? -eq 0 ]]; then
+    # Wait for all instances to be terminated
+    echo "⏳ Waiting for all instances to terminate..."
+    aws ec2 wait instance-terminated --instance-ids "${TERMINATE_IDS[@]}" 2>&1 || {
+        echo "❌ Failed to wait for termination of some instances"
+    }
+
+    # Verify termination status
+    SUCCESS_COUNT=0
+    for ENTRY in "${ALL_INSTANCE_IDS[@]}"; do
+        INSTANCE_ID="${ENTRY%%|*}"
+        SERVICE="${ENTRY#*|}"
+        STATUS=$(aws ec2 describe-instances \
             --instance-ids "$INSTANCE_ID" \
+            --query "Reservations[0].Instances[0].State.Name" \
             --output text 2>&1)
-
-        if [[ $? -eq 0 ]]; then
-            # Wait for instance to be terminated
-            echo "⏳ Waiting for $instance ($INSTANCE_ID) to terminate..."
-            aws ec2 wait instance-terminated --instance-ids "$INSTANCE_ID" 2>&1 || {
-                echo "❌ Failed to wait for termination of $instance ($INSTANCE_ID): $?"
-                continue
-            }
-            echo "✅ Terminated $instance ($INSTANCE_ID)"
+        if [[ "$STATUS" == "terminated" ]]; then
+            echo "✅ Terminated $SERVICE ($INSTANCE_ID)"
             ((SUCCESS_COUNT++))
         else
-            echo "❌ Failed to terminate $instance ($INSTANCE_ID): $TERMINATE_RESULT"
+            echo "❌ $SERVICE ($INSTANCE_ID) is in state: $STATUS"
         fi
     done
-done
+else
+    echo "❌ Failed to terminate instances: $TERMINATE_RESULT"
+    exit 1
+fi
 
 echo "✅ Completed: $SUCCESS_COUNT instances terminated successfully."
