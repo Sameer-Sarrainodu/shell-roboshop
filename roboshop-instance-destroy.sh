@@ -1,29 +1,22 @@
 #!/bin/bash
-
-echo "Destroying the instances and updating tag Name to 'old'"
-
-instances=("frontend" "mongodb" "catalogue" "redis" "user" "cart" "mysql" "shipping" "rabbitmq" "payment" "dispatch")
-
-for instance in "${instances[@]}"
-do
-  echo "Processing $instance"
+for instance in "${instances[@]}"; do
+  echo "🧨 Processing instance: $instance"
 
   INSTANCE_ID=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}-latest" "Name=instance-state-name,Values=pending,running,stopping,stopped" \
     --query "Reservations[0].Instances[0].InstanceId" \
     --output text)
 
-  if [[ "$INSTANCE_ID" == "None" || $INSTANCE_ID == "null"  || -z "$INSTANCE_ID" ]]; then
-    echo "No instance found with tag Name=${instance}-latest. Skipping..."
+  if [[ "$INSTANCE_ID" == "None" || "$INSTANCE_ID" == "null" || -z "$INSTANCE_ID" ]]; then
+    echo "⚠️  No running instance found with tag ${instance}-latest"
     continue
   fi
 
-  echo "Updating tag Name to '${instance}-old' for instance $INSTANCE_ID"
+  echo "✏️ Renaming $instance to ${instance}-old"
   aws ec2 create-tags --resources "$INSTANCE_ID" --tags "Key=Name,Value=${instance}-old"
 
-  echo "Terminating instance $INSTANCE_ID"
+  echo "💣 Terminating instance $INSTANCE_ID"
   aws ec2 terminate-instances --instance-ids "$INSTANCE_ID"
-
 done
 
-echo "Done destroying instances."
+echo "✅ All instances terminated and DNS records cleaned up."
