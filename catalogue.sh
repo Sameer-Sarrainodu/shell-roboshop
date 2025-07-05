@@ -90,7 +90,7 @@ mongosh --host mongod.sharkdev.shop --eval 'show dbs' &>>$logfile
 status=$?
 if [ $status -ne 0 ]
 then
-    mongosh --host mongod.sharkdev.site </app/db/master-data.js &>>logfile
+    mongosh --host mongodb.sharkdev.site </app/db/master-data.js &>>logfile
     validate $? "loading data into mongodb"
 else
     echo -e "data is already loaded "
