@@ -26,8 +26,10 @@ while read -r INSTANCE_ID SERVICE_TAG; do
   # Decide which IP to use
   if [[ "$SERVICE_TAG" == "frontend" ]]; then
     SELECTED_IP="$PUBLIC_IP"
+    DNS_NAME="sharkdev.shop"
   else
     SELECTED_IP="$PRIVATE_IP"
+    DNS_NAME="${SERVICE_TAG}.sharkdev.shop"
   fi
 
   # Skip if IP is empty or None
@@ -43,16 +45,16 @@ while read -r INSTANCE_ID SERVICE_TAG; do
       \"Changes\": [{
         \"Action\": \"UPSERT\",
         \"ResourceRecordSet\": {
-          \"Name\": \"${SERVICE_TAG}.sharkdev.shop\",
+          \"Name\": \"$DNS_NAME\",
           \"Type\": \"A\",
           \"TTL\": 5,
-          \"ResourceRecords\": [{\"Value\": \"${SELECTED_IP}\"}]
+          \"ResourceRecords\": [{\"Value\": \"$SELECTED_IP\"}]
         }
       }]
     }"
 
-  echo "✅ DNS record set for $SERVICE_TAG → $SELECTED_IP"
+  echo "✅ DNS record set for $DNS_NAME → $SELECTED_IP"
 
 done <<< "$instances"
 
-echo "✅ All 11 DNS records updated successfully."
+echo "✅ All DNS records updated successfully."
