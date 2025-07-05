@@ -12,8 +12,8 @@ for instance in "${instances[@]}"; do
     continue
   fi
 
-  echo "✏️ Renaming $instance to ${instance}-old"
-  aws ec2 create-tags --resources "$INSTANCE_ID" --tags "Key=Name,Value=${instance}-old"
+  echo "✏️ Renaming ${instance}-latest to ${instance}-latest-old"
+  aws ec2 create-tags --resources "$INSTANCE_ID" --tags "Key=Name,Value=${instance}-latest-old"
 
   echo "💣 Terminating instance $INSTANCE_ID"
   aws ec2 terminate-instances --instance-ids "$INSTANCE_ID"
