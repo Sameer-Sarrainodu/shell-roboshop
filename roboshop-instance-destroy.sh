@@ -13,6 +13,9 @@ else
     exit 1
 fi
 
+# Counter for successful terminations
+SUCCESS_COUNT=0
+
 # Loop through each service to find and terminate instances
 for instance in "${instances[@]}"; do
     echo "🔍 Searching for $instance instance..."
@@ -21,7 +24,13 @@ for instance in "${instances[@]}"; do
     INSTANCE_IDS=$(aws ec2 describe-instances \
         --filters "Name=instance-state-name,Values=running" "Name=tag:service,Values=$instance" \
         --query "Reservations[*].Instances[*].InstanceId" \
-        --output text 2>/dev/null)
+        --output text 2>&1)
+
+    # Check if the command failed
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Error fetching instances for $instance: $INSTANCE_IDS"
+        continue
+    fi
 
     # Check if any instances were found
     if [[ -z "$INSTANCE_IDS" ]]; then
@@ -32,15 +41,23 @@ for instance in "${instances[@]}"; do
     # Terminate each instance
     for INSTANCE_ID in $INSTANCE_IDS; do
         echo "🗑️ Terminating $instance instance ($INSTANCE_ID)..."
-        aws ec2 terminate-instances \
+        TERMINATE_RESULT=$(aws ec2 terminate-instances \
             --instance-ids "$INSTANCE_ID" \
-            --output text 2>/dev/null || { echo "❌ Failed to terminate $instance ($INSTANCE_ID)"; continue; }
+            --output text 2>&1)
 
-        # Wait for instance to be terminated
-        echo "⏳ Waiting for $instance ($INSTANCE_ID) to terminate..."
-        aws ec2 wait instance-terminated --instance-ids "$INSTANCE_ID" 2>/dev/null || { echo "❌ Failed to wait for termination of $instance ($INSTANCE_ID)"; continue; }
-        echo "✅ Terminated $instance ($INSTANCE_ID)"
+        if [[ $? -eq 0 ]]; then
+            # Wait for instance to be terminated
+            echo "⏳ Waiting for $instance ($INSTANCE_ID) to terminate..."
+            aws ec2 wait instance-terminated --instance-ids "$INSTANCE_ID" 2>&1 || {
+                echo "❌ Failed to wait for termination of $instance ($INSTANCE_ID): $?"
+                continue
+            }
+            echo "✅ Terminated $instance ($INSTANCE_ID)"
+            ((SUCCESS_COUNT++))
+        else
+            echo "❌ Failed to terminate $instance ($INSTANCE_ID): $TERMINATE_RESULT"
+        fi
     done
 done
 
-echo "✅ All specified instances terminated successfully."
+echo "✅ Completed: $SUCCESS_COUNT instances terminated successfully."
