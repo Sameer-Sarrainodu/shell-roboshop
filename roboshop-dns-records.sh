@@ -2,17 +2,23 @@
 
 ZONE_ID="Z0022572U6LHZ3ASAGBB"
 
-# Fetch running instances tagged with *latest and having 'service' tag
+# Safely get instance ID and its service tag
 instances=$(aws ec2 describe-instances \
   --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values=*latest" \
-  --query "Reservations[*].Instances[*].[InstanceId, Tags[?Key=='service']|[0].Value]" \
+  --query "Reservations[].Instances[].[InstanceId, Tags[?Key=='service'] | [0].Value]" \
   --output text)
 
-# Loop through each instance line
+# Process each instance
 while read -r INSTANCE_ID SERVICE_TAG; do
+  # Skip if SERVICE_TAG is empty
+  if [[ -z "$SERVICE_TAG" || "$SERVICE_TAG" == "None" ]]; then
+    echo "⚠️  Skipping instance $INSTANCE_ID due to missing service tag"
+    continue
+  fi
+
   echo "🔄 Processing $SERVICE_TAG ($INSTANCE_ID)"
 
-  # Fetch both IPs
+  # Get IPs
   PUBLIC_IP=$(aws ec2 describe-instances \
     --instance-ids "$INSTANCE_ID" \
     --query "Reservations[0].Instances[0].PublicIpAddress" \
@@ -23,7 +29,7 @@ while read -r INSTANCE_ID SERVICE_TAG; do
     --query "Reservations[0].Instances[0].PrivateIpAddress" \
     --output text)
 
-  # Decide which IP to use
+  # Decide IP
   if [[ "$SERVICE_TAG" == "frontend" ]]; then
     SELECTED_IP="$PUBLIC_IP"
     DNS_NAME="sharkdev.shop"
@@ -32,13 +38,13 @@ while read -r INSTANCE_ID SERVICE_TAG; do
     DNS_NAME="${SERVICE_TAG}.sharkdev.shop"
   fi
 
-  # Skip if IP is empty or None
+  # Check IP validity
   if [[ -z "$SELECTED_IP" || "$SELECTED_IP" == "None" ]]; then
     echo "⚠️  Skipping $SERVICE_TAG due to missing IP"
     continue
   fi
 
-  # Create/Update Route53 record for selected IP
+  # Create or update DNS record
   aws route53 change-resource-record-sets \
     --hosted-zone-id "$ZONE_ID" \
     --change-batch "{
