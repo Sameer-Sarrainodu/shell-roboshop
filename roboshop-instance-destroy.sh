@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to terminate all EC2 instances with specific service tags in a single batch
+# Script to terminate all EC2 instances with specific service tags in a single batch (no waiting)
 
 # Configuration
 instances=("frontend" "mongodb" "catalogue" "redis" "user" "cart" "mysql" "shipping" "rabbitmq" "payment" "dispatch")
@@ -60,31 +60,29 @@ TERMINATE_RESULT=$(aws ec2 terminate-instances \
     --output text 2>&1)
 
 if [[ $? -eq 0 ]]; then
-    # Wait for all instances to be terminated
-    echo "⏳ Waiting for all instances to terminate..."
-    aws ec2 wait instance-terminated --instance-ids "${TERMINATE_IDS[@]}" 2>&1 || {
-        echo "❌ Failed to wait for termination of some instances"
-    }
-
-    # Verify termination status
-    SUCCESS_COUNT=0
-    for ENTRY in "${ALL_INSTANCE_IDS[@]}"; do
-        INSTANCE_ID="${ENTRY%%|*}"
-        SERVICE="${ENTRY#*|}"
-        STATUS=$(aws ec2 describe-instances \
-            --instance-ids "$INSTANCE_ID" \
-            --query "Reservations[0].Instances[0].State.Name" \
-            --output text 2>&1)
-        if [[ "$STATUS" == "terminated" ]]; then
-            echo "✅ Terminated $SERVICE ($INSTANCE_ID)"
-            ((SUCCESS_COUNT++))
-        else
-            echo "❌ $SERVICE ($INSTANCE_ID) is in state: $STATUS"
-        fi
-    done
+    echo "✅ Termination request sent for ${#TERMINATE_IDS[@]} instances"
 else
     echo "❌ Failed to terminate instances: $TERMINATE_RESULT"
     exit 1
 fi
 
-echo "✅ Completed: $SUCCESS_COUNT instances terminated successfully."
+# Optional: Verify termination status (commented out; uncomment to check)
+# echo "🔍 Checking termination status..."
+# SUCCESS_COUNT=0
+# for ENTRY in "${ALL_INSTANCE_IDS[@]}"; do
+#     INSTANCE_ID="${ENTRY%%|*}"
+#     SERVICE="${ENTRY#*|}"
+#     STATUS=$(aws ec2 describe-instances \
+#         --instance-ids "$INSTANCE_ID" \
+#         --query "Reservations[0].Instances[0].State.Name" \
+#         --output text 2>&1)
+#     if [[ "$STATUS" == "terminated" ]]; then
+#         echo "✅ Terminated $SERVICE ($INSTANCE_ID)"
+#         ((SUCCESS_COUNT++))
+#     else
+#         echo "❌ $SERVICE ($INSTANCE_ID) is in state: $STATUS"
+#     fi
+# done
+# echo "✅ Completed: $SUCCESS_COUNT instances terminated successfully."
+
+echo "✅ Termination request completed. Instances are terminating in the background."
