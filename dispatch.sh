@@ -71,6 +71,9 @@ validate $? "getting log"
 go build &>>$logfile
 validate $? "buildng go"
 
+cp $scriptdir/dispatch.service /etc/systemd/system/dispatch.service &>>$logfile
+validate $? "copying system service file."
+
 systemctl daemon-reload
 systemctl enable dispatch
 systemctl start dispatch

@@ -13,22 +13,22 @@ echo "script executed at $(date)"|tee -a $logfile
 
 checkroot(){
 userid=$(id -u)
-if [$userid -ne 0 ]
+if [ $userid -ne 0 ]
 then
-    echo -e "$red Error:you are not a sudo $nc"|tee -a$logfile
+    echo -e "$red Error:you are not a sudo $nc"|tee -a $logfile
     sudo -i
     exit 1
 else
-    echo -e "$green success$nc: you are sudo"|tee -a$logfile
+    echo -e "$green success$nc: you are sudo"|tee -a $logfile
 fi
 }
 validate(){
     if [ $1 -ne 0 ]
     then
-        echo -e "$red error:$2 is not installed $nc" |tee -a$logfile
+        echo -e "$red error:$2 is not installed $nc" |tee -a $logfile
         exit 1
     else
-        echo -e "$green success:$nc installed $2 successfully"|tee -a$logfile
+        echo -e "$green success:$nc installed $2 successfully"|tee -a $logfile
     fi
 
 }
@@ -42,7 +42,7 @@ checkroot
 dnf module disable nodejs -y &>>$logfile
 validate $? "disable nodejs"
 
-dnf module enable modejs:20 -y &>>$logfile
+dnf module enable nodejs:20 -y &>>$logfile
 validate $? "enable nodejs"
 
 dnf install nodejs -y &>>$logfile

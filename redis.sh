@@ -43,7 +43,7 @@ checkroot
 dnf module disable redis -y &>>$logfile
 validate $? "disable redis"
 
-dnf module enable reids:7 -y &>>$logfile
+dnf module enable redis:7 -y &>>$logfile
 validate $? "enable redis"
 
 dnf install redis -y &>>$logfile

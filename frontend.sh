@@ -19,7 +19,7 @@ then
     sudo -i
     exit 1
 else
-    echo -e "$green success$nc: you are sudo"|tee -a $logfile
+    echo -e "$green success${nc}: you are sudo"|tee -a $logfile
 fi
 }
 validate(){

@@ -43,7 +43,7 @@ checkroot
 dnf module disable nodejs -y &>>$logfile
 validate $? "disable nodejs"
 
-dnf module enable modejs:20 -y &>>$logfile
+dnf module enable nodejs:20 -y &>>$logfile
 validate $? "enable nodejs"
 
 dnf install nodejs -y &>>$logfile
