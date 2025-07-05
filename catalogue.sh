@@ -88,12 +88,13 @@ validate $? "Installing MongoDB Client"
 
 mongosh --host mongod.sharkdev.shop --eval 'show dbs' &>>$logfile
 status=$?
-if [ $status -ne 0 ]
-then
-    mongosh --host mongodb.sharkdev.site </app/db/master-data.js &>>logfile
+
+if [ $status -ne 0 ]; then
+    mongosh --host mongodb.sharkdev.site </app/db/master-data.js &>>$logfile
     validate $? "loading data into mongodb"
 else
-    echo -e "data is already loaded "
+    echo -e "${yellow}MongoDB data is already loaded. SKIPPING DB load.${nc}" | tee -a $logfile
 fi
+
 
 printtime
