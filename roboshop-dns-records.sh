@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ZONE_ID="Z05489693LFV4727Y7R4T"
+ZONE_ID="Z0022572U6LHZ3ASAGBB"
 
 # Get a list of running instances with tag Name=*latest
 instances=$(aws ec2 describe-instances \
