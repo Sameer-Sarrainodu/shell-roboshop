@@ -4,8 +4,7 @@ ZONE_ID="Z0022572U6LHZ3ASAGBB"
 services=("mongodb" "redis" "mysql" "rabbitmq" "catalogue" "user" "cart" "shipping" "payment" "dispatch" "frontend")
 
 for service in "${services[@]}"; do
-  for suffix in "" "-internal"; do
-    RECORD_NAME="${service}${suffix}.sharkdev.shop."
+    RECORD_NAME="${service}.sharkdev.shop."
 
     echo "Checking and deleting: $RECORD_NAME"
 
@@ -33,5 +32,4 @@ for service in "${services[@]}"; do
           }
         ]
       }"
-  done
 done

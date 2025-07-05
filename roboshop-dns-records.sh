@@ -51,7 +51,7 @@ while read -r INSTANCE_ID SERVICE_TAG; do
       "Changes": [{
         "Action": "UPSERT",
         "ResourceRecordSet": {
-          "Name": "'$SERVICE_TAG'-internal.sharkdev.shop",
+          "Name": "'$SERVICE_TAG'.sharkdev.shop",
           "Type": "A",
           "TTL": 5,
           "ResourceRecords": [{"Value": "'$PRIVATE_IP'"}]
