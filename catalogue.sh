@@ -62,11 +62,11 @@ fi
 mkdir -p /app &>>$logfile
 validate $? "making /app dir"
 rm -rf /app/*
-curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip &>>$LOG_FILE
+curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip &>>$logfile
 validate $? "Downloading Catalogue"
 
 cd /app 
-unzip /tmp/catalogue.zip &>>$LOG_FILE
+unzip /tmp/catalogue.zip &>>$logfile
 validate $? "unzipping catalogue"
 
 cd /app
@@ -77,13 +77,13 @@ validate $? "installing resources"
 cp $scriptdir/catalogue.service /etc/systemd/system/catalogue.service &>>$logfile
 validate $? "copying catalogue service"
 
-systemctl daemon-reload &>>$LOG_FILE
-systemctl enable catalogue  &>>$LOG_FILE
+systemctl daemon-reload &>>$logfile
+systemctl enable catalogue  &>>$logfile
 systemctl start catalogue
 validate $? "Starting Catalogue"
 
 cp $scriptdir/mongo.repo /etc/yum.repos.d/mongo.repo 
-dnf install mongodb-mongosh -y &>>$LOG_FILE
+dnf install mongodb-mongosh -y &>>$logfile
 validate $? "Installing MongoDB Client"
 
 mongosh --host mongod.sharkdev.shop --eval 'show dbs' &>>$logfile
