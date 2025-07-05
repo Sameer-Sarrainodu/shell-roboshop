@@ -37,7 +37,7 @@ while read -r INSTANCE_ID SERVICE_TAG; do
       "Changes": [{
         "Action": "UPSERT",
         "ResourceRecordSet": {
-          "Name": "'$SERVICE_TAG'.doubtfree.online",
+          "Name": "'$SERVICE_TAG'.sharkdev.shop",
           "Type": "A",
           "TTL": 5,
           "ResourceRecords": [{"Value": "'$PUBLIC_IP'"}]
@@ -51,7 +51,7 @@ while read -r INSTANCE_ID SERVICE_TAG; do
       "Changes": [{
         "Action": "UPSERT",
         "ResourceRecordSet": {
-          "Name": "'$SERVICE_TAG'-internal.doubtfree.online",
+          "Name": "'$SERVICE_TAG'-internal.sharkdev.shop",
           "Type": "A",
           "TTL": 5,
           "ResourceRecords": [{"Value": "'$PRIVATE_IP'"}]
