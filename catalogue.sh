@@ -6,10 +6,10 @@ nc="\[0m"
 logsdir="/var/log/shellscript-logs"
 scriptname=$(basename "$0" | cut -d "." -f1)
 logfile="$logsdir/$scriptname.log"
-scriptdir="$PWD
+scriptdir=$PWD
 
 mkdir -p logsdir
-echo "script executed at $(date)|tee -a $logfile
+echo " script executed at $(date)"|tee -a $logfile
 
 checkroot(){
 userid=$(id -u)

@@ -9,7 +9,7 @@ logfile="$logsdir/$scriptname.log"
 scriptdir=$PWD
 
 mkdir -p logsdir
-echo "script executed at $(date)|tee -a $logfile
+echo "script executed at $(date)"|tee -a $logfile
 checkroot(){
 userid=$(id -u)
 if [$userid -ne 0 ]
