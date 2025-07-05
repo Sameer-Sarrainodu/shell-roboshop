@@ -1,9 +1,9 @@
 #!/bin/bash
 starttime=$(date +%s)
-red="\[31m"
-green="\[32m"
-yellow="\033[1;33m"
-nc="\[0m"
+red="\e[31m"
+green="\e[32m"
+yellow="\e[33m"
+nc="\e[0m"
 logsdir="/var/log/shellscript-logs"
 scriptname=$(basename "$0" | cut -d "." -f1)
 logfile="$logsdir/$scriptname.log"
@@ -51,21 +51,20 @@ dnf install nodejs -y &>>$logfile
 validate $? "installing nodejs"
 
 id roboshop
-if [ $? -ne 0 ] then
-
+if [ $? -ne 0 ] 
+then
     useradd --system --home /app --shell /sbin/nologin --comment "roboshop sytem user" roboshop $>>$logfile
     validate $? "creating system user roboshop"
 else
     echo -e "user already existed $yellow skipping $nc"
 fi
 
-mkdir /app &>>$logfile
+mkdir -p /app &>>$logfile
 validate $? "making /app dir"
-
+rm -rf /app/*
 curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip &>>$LOG_FILE
 validate $? "Downloading Catalogue"
 
-rm -rf /app/*
 cd /app 
 unzip /tmp/catalogue.zip &>>$LOG_FILE
 validate $? "unzipping catalogue"

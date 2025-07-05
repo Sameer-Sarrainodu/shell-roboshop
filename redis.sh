@@ -1,9 +1,9 @@
 #!/bin/bash
 starttime=$(date +%s)
-red="\[31m"
-green="\[32m"
-yellow="\033[1;33m"
-nc="\[0m"
+red="\e[31m"
+green="\e[32m"
+yellow="\e[33m"
+nc="\e[0m"
 logsdir="/var/log/shellscript-logs"
 scriptname=$(basename "$0" | cut -d "." -f1)
 logfile="$logsdir/$scriptname.log"
@@ -49,7 +49,7 @@ validate $? "enable redis"
 dnf install redis -y &>>$logfile
 validate $? "installing redis"
 
-sed -i 's/127.0.0.1/0.0.0.0/g' -e '/protected-mode/ c protected-mode no' /etc/redis/redis.conf &>>$logfile
+sed -i -e 's/127.0.0.1/0.0.0.0/g' -e '/protected-mode/ c protected-mode no' /etc/redis/redis.conf &>>$logfile
 validate $? "changes in default redis conf"
 
 systemctl enable redis &>>$logfile

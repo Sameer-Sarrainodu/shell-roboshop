@@ -1,9 +1,9 @@
 #!/bin/bash
 starttime=$(date +%s)
-red="\[31m"
-green="\[32m"
-yellow="\033[1;33m"
-nc="\[0m"
+red="\e[31m"
+green="\e[32m"
+yellow="\e[33m"
+nc="\e[0m"
 logsdir="/var/log/shellscript-logs"
 scriptname=$(basename "$0" | cut -d "." -f1)
 logfile="$logsdir/$scriptname.log"
@@ -53,9 +53,9 @@ else
     echo -e "System user roboshop already created ... $yellow SKIPPING $nc"
 fi
 
-mkdir /app
+mkdir -p /app
 validate $? "making dir /app"
-
+rm -rf /app/*
 curl -L -o /tmp/payment.zip https://roboshop-artifacts.s3.amazonaws.com/payment-v3.zip &>>$logfile
 validate $? "down payment resource"
 cd /app 
