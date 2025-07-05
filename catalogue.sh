@@ -86,14 +86,13 @@ cp $scriptdir/mongo.repo /etc/yum.repos.d/mongo.repo
 dnf install mongodb-mongosh -y &>>$logfile
 validate $? "Installing MongoDB Client"
 
-mongosh --host mongod.sharkdev.shop --eval 'show dbs' &>>$logfile
-status=$?
-
-if [ $status -ne 0 ]; then
-    mongosh --host mongodb.sharkdev.site </app/db/master-data.js &>>$logfile
-    validate $? "loading data into mongodb"
+STATUS=$(mongosh --host mongodb.daws84s.site --eval 'db.getMongo().getDBNames().indexOf("catalogue")')
+if [ $STATUS -lt 0 ]
+then
+    mongosh --host mongodb.daws84s.site </app/db/master-data.js &>>$logfile
+    VALIDATE $? "Loading data into MongoDB"
 else
-    echo -e "${yellow}MongoDB data is already loaded. SKIPPING DB load.${nc}" | tee -a $logfile
+    echo -e "Data is already loaded ... $Y SKIPPING $N"
 fi
 
 
