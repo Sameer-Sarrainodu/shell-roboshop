@@ -13,6 +13,9 @@ else
     exit 1
 fi
 
+# Counter for successful deletions
+SUCCESS_COUNT=0
+
 # Loop through each service to delete DNS records
 for instance in "${instances[@]}"; do
     # Set domain name based on service
@@ -25,19 +28,23 @@ for instance in "${instances[@]}"; do
     echo "🔍 Checking for DNS record for $DOMAIN_NAME..."
 
     # Check if the DNS record exists
-    RECORD_EXISTS=$(aws route53 list-resource-record-sets \
+    RECORD=$(aws route53 list-resource-record-sets \
         --hosted-zone-id "$ZONE_ID" \
         --query "ResourceRecordSets[?Name=='${DOMAIN_NAME}.']|[?Type=='A']" \
-        --output text 2>/dev/null)
+        --output json 2>/dev/null)
 
-    if [[ -z "$RECORD_EXISTS" ]]; then
+    if [[ -z "$RECORD" || "$RECORD" == "[]" ]]; then
         echo "⚠️ No A record found for $DOMAIN_NAME"
         continue
     fi
 
+    # Extract the current TTL and ResourceRecords for the DELETE action
+    TTL=$(echo "$RECORD" | jq -r '.[0].TTL')
+    RESOURCE_RECORDS=$(echo "$RECORD" | jq -r '.[0].ResourceRecords')
+
     # Delete the DNS record
     echo "🗑️ Deleting DNS record for $DOMAIN_NAME..."
-    aws route53 change-resource-record-sets \
+    DELETE_RESULT=$(aws route53 change-resource-record-sets \
         --hosted-zone-id "$ZONE_ID" \
         --change-batch "{
             \"Changes\": [{
@@ -45,13 +52,19 @@ for instance in "${instances[@]}"; do
                 \"ResourceRecordSet\": {
                     \"Name\": \"${DOMAIN_NAME}\",
                     \"Type\": \"A\",
-                    \"TTL\": 5,
-                    \"ResourceRecords\": [{\"Value\": \"0.0.0.0\"}]
+                    \"TTL\": $TTL,
+                    \"ResourceRecords\": $RESOURCE_RECORDS
                 }
             }]
-        }" 2>/dev/null || { echo "❌ Failed to delete DNS record for $DOMAIN_NAME"; continue; }
+        }" 2>&1)
 
-    echo "✅ Deleted DNS record for $DOMAIN_NAME"
+    if [[ $? -eq 0 ]]; then
+        echo "✅ Deleted DNS record for $DOMAIN_NAME"
+        ((SUCCESS_COUNT++))
+    else
+        echo "❌ Failed to delete DNS record for $DOMAIN_NAME: $DELETE_RESULT"
+    fi
 done
 
-echo "✅ All specified DNS records deleted successfully."
+# Final summary
+echo "✅ Completed: $SUCCESS_COUNT DNS records deleted successfully."
