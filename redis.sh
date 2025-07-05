@@ -7,7 +7,7 @@ logsdir="/var/log/shellscript-logs"
 scriptname=$(basename "$0" | cut -d "." -f1)
 logfile="$logsdir/$scriptname.log"
 
-mkdir -p logsdir
+mkdir -p $logsdir
 echo "script executed at $(date)"|tee -a $logfile
 
 checkroot(){
