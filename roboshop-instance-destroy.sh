@@ -2,7 +2,7 @@
 
 echo "Destroying the instances and updating tag Name to 'old'"
 
-instances=("frontend" "mongodb" "catalogue" "cart" "user" "shipping" "payment" "dispatch" "redis" "mysql" "rabbitmq")
+instances=("frontend" "mongodb" "catalogue" "redis" "user" "cart" "mysql" "shipping" "rabbitmq" "payment" "dispatch")
 
 for instance in "${instances[@]}"
 do

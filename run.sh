@@ -4,7 +4,7 @@ PASSWORD="DevOps321"
 USER="ec2-user"
 DOMAIN="sharkdev.shop"
 
-services=("mongodb" "redis" "mysql" "rabbitmq" "catalogue" "user" "cart" "shipping" "payment" "dispatch" "frontend")
+services=("frontend" "mongodb" "catalogue" "redis" "user" "cart" "mysql" "shipping" "rabbitmq" "payment" "dispatch")
 
 for service in "${services[@]}"; do
   echo "Connecting to $service"

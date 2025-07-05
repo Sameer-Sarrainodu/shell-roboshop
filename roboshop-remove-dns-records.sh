@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ZONE_ID="Z0022572U6LHZ3ASAGBB"
-services=("mongodb" "redis" "mysql" "rabbitmq" "catalogue" "user" "cart" "shipping" "payment" "dispatch" "frontend")
+services=("frontend" "mongodb" "catalogue" "redis" "user" "cart" "mysql" "shipping" "rabbitmq" "payment" "dispatch")
 
 for service in "${services[@]}"; do
     RECORD_NAME="${service}.sharkdev.shop."

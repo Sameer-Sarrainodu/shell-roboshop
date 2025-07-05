@@ -3,7 +3,7 @@ INSTANCE_TYPE="t2.micro"
 SECURITY_GROUP_ID="sg-0e431449e6b8a4604"
 ZONE_ID="Z0022572U6LHZ3ASAGBB"
 
-instances=("frontend" "mongodb" "catalogue" "reids" "user" "cart" "shipping" "payment" "dispatch")
+instances=("frontend" "mongodb" "catalogue" "redis" "user" "cart" "mysql" "shipping" "rabbitmq" "payment" "dispatch")
 
 if aws --version &> /dev/null; then
     echo "aws cli is installed"
