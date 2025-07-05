@@ -94,5 +94,6 @@ then
     validate $? "loading data into mongodb"
 else
     echo -e "data is already loaded "
+fi
 
 printtime
