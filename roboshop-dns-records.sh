@@ -2,23 +2,17 @@
 
 ZONE_ID="Z0022572U6LHZ3ASAGBB"
 
-# Get running instances with Name tag containing "-latest"
+# Fetch running instances tagged with *latest and having 'service' tag
 instances=$(aws ec2 describe-instances \
   --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values=*latest" \
   --query "Reservations[*].Instances[*].[InstanceId, Tags[?Key=='service']|[0].Value]" \
   --output text)
 
-# Loop through instance lines
+# Loop through each instance line
 while read -r INSTANCE_ID SERVICE_TAG; do
-  # Skip if either value is empty
-  if [[ -z "$INSTANCE_ID" || -z "$SERVICE_TAG" || "$SERVICE_TAG" == "None" ]]; then
-    echo "⚠️  Skipping invalid entry (InstanceId: $INSTANCE_ID, Service: $SERVICE_TAG)"
-    continue
-  fi
-
   echo "🔄 Processing $SERVICE_TAG ($INSTANCE_ID)"
 
-  # Fetch IPs
+  # Fetch both IPs
   PUBLIC_IP=$(aws ec2 describe-instances \
     --instance-ids "$INSTANCE_ID" \
     --query "Reservations[0].Instances[0].PublicIpAddress" \
@@ -29,37 +23,42 @@ while read -r INSTANCE_ID SERVICE_TAG; do
     --query "Reservations[0].Instances[0].PrivateIpAddress" \
     --output text)
 
-  # Choose IP and DNS name
+  # Decide which IP to use
   if [[ "$SERVICE_TAG" == "frontend" ]]; then
     SELECTED_IP="$PUBLIC_IP"
-    DNS_NAME="sharkdev.shop"
   else
     SELECTED_IP="$PRIVATE_IP"
-    DNS_NAME="${SERVICE_TAG}.sharkdev.shop"
   fi
 
-  # Skip if IP is missing
+  # Skip if IP is empty or None
   if [[ -z "$SELECTED_IP" || "$SELECTED_IP" == "None" ]]; then
     echo "⚠️  Skipping $SERVICE_TAG due to missing IP"
     continue
   fi
 
-  # Create/Update DNS record
+  # Set domain name based on service tag
+  if [[ "$SERVICE_TAG" == "frontend" ]]; then
+    DOMAIN_NAME="sharkdev.shop"
+  else
+    DOMAIN_NAME="${SERVICE_TAG}.sharkdev.shop"
+  fi
+
+  # Create/Update Route53 record for selected IP
   aws route53 change-resource-record-sets \
     --hosted-zone-id "$ZONE_ID" \
     --change-batch "{
       \"Changes\": [{
         \"Action\": \"UPSERT\",
         \"ResourceRecordSet\": {
-          \"Name\": \"$DNS_NAME\",
+          \"Name\": \"${DOMAIN_NAME}\",
           \"Type\": \"A\",
           \"TTL\": 5,
-          \"ResourceRecords\": [{\"Value\": \"$SELECTED_IP\"}]
+          \"ResourceRecords\": [{\"Value\": \"${SELECTED_IP}\"}]
         }
       }]
     }"
 
-  echo "✅ DNS record set for $DNS_NAME → $SELECTED_IP"
+  echo "✅ DNS record set for $DOMAIN_NAME → $SELECTED_IP"
 
 done <<< "$instances"
 
