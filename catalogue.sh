@@ -96,5 +96,3 @@ else
     echo -e "data is already loaded "
 
 printtime
-
-
