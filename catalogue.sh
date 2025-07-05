@@ -90,7 +90,7 @@ STATUS=$(mongosh --host mongodb.sharkdev.shop --eval 'db.getMongo().getDBNames()
 if [ $STATUS -lt 0 ]
 then
     mongosh --host mongodb.sharkdev.shop </app/db/master-data.js &>>$logfile
-    VALIDATE $? "Loading data into MongoDB"
+    validate $? "Loading data into MongoDB"
 else
     echo -e "Data is already loaded ... $Y SKIPPING $N"
 fi
