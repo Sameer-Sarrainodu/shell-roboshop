@@ -56,13 +56,13 @@ fi
 mkdir -p /app
 validate $? "making dir /app"
 rm -rf /app/*
-chown roboshop:roboshop /app
+# chown roboshop:roboshop /app
 curl -L -o /tmp/payment.zip https://roboshop-artifacts.s3.amazonaws.com/payment-v3.zip &>>$logfile
 validate $? "down payment resource"
 cd /app 
 unzip /tmp/payment.zip
 validate $? "unzipping"
-chown -R roboshop:roboshop /app
+# chown -R roboshop:roboshop /app
 
 cd /app
 mv "$scriptdir/payment.ini" .
