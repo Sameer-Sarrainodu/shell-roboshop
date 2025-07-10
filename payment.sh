@@ -66,8 +66,6 @@ chown -R roboshop:roboshop /app
 
 cd /app
 mv "$scriptdir/payment.ini" .
-chown roboshop:roboshop payment.ini
-chmod 644 payment.ini
 pip3 install -r requirements.txt &>>$logfile
 validate $? "installing req"
 
