@@ -65,7 +65,7 @@ validate $? "unzipping"
 # chown -R roboshop:roboshop /app
 
 cd /app
-mv "$scriptdir/payment.ini" .
+mv "$scriptdir/payment.ini" . |tee -a "copying payment.ini"
 pip3 install -r requirements.txt &>>$logfile
 validate $? "installing req"
 
